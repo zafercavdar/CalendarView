@@ -2,14 +2,14 @@ import logging
 import textwrap
 from collections import defaultdict
 from datetime import date, time, datetime, timedelta
-from typing import List, Tuple, Optional, NoReturn
+from typing import List, Tuple, Optional, NoReturn, Dict
 
 from PIL import Image, ImageDraw
 from PIL.ImageFont import FreeTypeFont
 
 from calendar_view.config import i18n, style
 from calendar_view.core import data, time_utils
-from calendar_view.core.config import CalendarConfig, VerticalAlign
+from calendar_view.core.config import CalendarConfig
 from calendar_view.core.event import Event
 from calendar_view.core.round_rectangle import draw_rounded_rectangle
 from calendar_view.core.utils import StringUtils
@@ -331,7 +331,7 @@ class EventDrawHelper:
         return EventDrawHelper.__build_text_metadata(notes, notes_inner_size, style.event_notes_font, False)
 
     @staticmethod
-    def calculate_text_y_position_offset(vertical_align: VerticalAlign, box_height: int, text_height: int,
+    def calculate_text_y_position_offset(vertical_align, box_height: int, text_height: int,
                                          total_text_height: int) -> int:
         """
         Calculates the offset of the text block.
