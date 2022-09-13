@@ -1,11 +1,9 @@
 import logging
 from datetime import date, timedelta
-from typing import Tuple, List, Literal
+from typing import Tuple, List
 
 from calendar_view.core import time_utils
 from calendar_view.core.utils import StringUtils
-
-VerticalAlign = Literal['top', 'center', 'bottom']
 
 
 class CalendarConfig(object):
@@ -17,6 +15,7 @@ class CalendarConfig(object):
     'day_hours' - show hours range '8:00 - 22:00'
     'working_hours' - show hours range '8:00 - 19:00'
     """
+
     def __init__(self,
                  lang: str = 'en',
                  title: str = '',
@@ -27,7 +26,7 @@ class CalendarConfig(object):
                  show_date: bool = True,
                  show_year: bool = False,
                  legend: bool = None,
-                 title_vertical_align: VerticalAlign = 'center'):
+                 title_vertical_align='center'):
         self.lang = lang
         self.title = title
         self.dates = dates
@@ -50,7 +49,7 @@ class CalendarConfig(object):
         if 'week' in modes:
             self.dates = '{} - {}'.format(
                 time_utils.current_week_day(0).strftime('%Y-%m-%d'),
-                time_utils.current_week_day(6).strftime('%Y-%m-%d')
+                time_utils.current_week_day(6).strftime('%Y-%m-%d'),
             )
         if 'day_hours' in modes:
             self.hours = '8:00 - 22:00'
@@ -59,15 +58,18 @@ class CalendarConfig(object):
 
     def validate(self):
         if StringUtils.is_blank(self.lang):
-            raise Exception("Parameter 'lang' is empty. Language has to be specified")
+            raise Exception(
+                "Parameter 'lang' is empty. Language has to be specified")
         if not (0 < self.days <= 14):
             raise Exception("Parameter 'days' can be in interval [1, 14]")
         self.get_hours_range()
         self.get_date_range()
         if self.dates and self.days:
-            logging.warning("Both parameters 'days' and 'dates' are used. 'days' value will be skipped.")
+            logging.warning(
+                "Both parameters 'days' and 'dates' are used. 'days' value will be skipped.")
         if self.show_year and not self.show_date:
-            logging.warning("'show_year' is set to True, but date wont be displayed, because 'show_date' is False.")
+            logging.warning(
+                "'show_year' is set to True, but date wont be displayed, because 'show_date' is False.")
 
     def get_date_range(self) -> Tuple[date, date]:
         """
@@ -78,7 +80,8 @@ class CalendarConfig(object):
         if self.days:
             return date.today(), date.today() + timedelta(days=self.days - 1)
 
-        logging.warning("Date range is not defined. Using default range 'Mo - Su'.")
+        logging.warning(
+            "Date range is not defined. Using default range 'Mo - Su'.")
         return time_utils.current_week_day(0), time_utils.current_week_day(6)
 
     def get_hours_range(self) -> Tuple[int, int]:
