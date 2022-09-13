@@ -19,6 +19,7 @@ class MultilineTextMetadata(object):
     """
     The required information to draw the text (title or notes) for the event.
     """
+
     def __init__(self, text: Optional[str] = None, size: tuple[int, int] = (0, 0)):
         self.text: Optional[str] = text
         self.size: tuple[int, int] = size
@@ -49,15 +50,18 @@ class CalendarEvents(object):
         Validate events.
         """
         if event.get_duration_seconds(self.config) < 1:
-            logging.warning(f"Skipping event, the duration is too small: {event}")
+            logging.warning(
+                f"Skipping event, the duration is too small: {event}")
             return
         end_date: date = event.get_end_date(self.config)
         start_date: date = event.get_start_date(self.config)
         if end_date < self.config.get_date_range()[0]:
-            logging.warning(f"Skipping event, it ends before the visible range: {event}")
+            logging.warning(
+                f"Skipping event, it ends before the visible range: {event}")
             return
         if start_date > self.config.get_date_range()[1]:
-            logging.warning(f"Skipping event, it starts after the visible range: {event}")
+            logging.warning(
+                f"Skipping event, it starts after the visible range: {event}")
             return
 
         if start_date == end_date or ((end_date - start_date).days == 1 and event.end_time == time(0, 0)):
@@ -69,15 +73,18 @@ class CalendarEvents(object):
             for single_date in time_utils.date_range(iter_from, iter_to):
                 next_date: date = single_date + timedelta(days=1)
                 if single_date == start_date:
-                    fr: datetime = datetime.combine(single_date, event.start_time)
+                    fr: datetime = datetime.combine(
+                        single_date, event.start_time)
                     to: datetime = datetime.combine(next_date, time(0, 0))
                 elif single_date == end_date:
                     fr: datetime = datetime.combine(single_date, time(0, 0))
-                    to: datetime = datetime.combine(single_date, event.end_time)
+                    to: datetime = datetime.combine(
+                        single_date, event.end_time)
                 else:
                     fr: datetime = datetime.combine(single_date, time(0, 0))
                     to: datetime = datetime.combine(next_date, time(0, 0))
-                self.__do_add_event(Event(title=event.title, style=event.style, start=fr, end=to))
+                self.__do_add_event(
+                    Event(title=event.title, style=event.style, start=fr, end=to))
 
     def __do_add_event(self, event: Event) -> None:
         data.validate_event(event, self.config)
@@ -95,7 +102,7 @@ class CalendarEvents(object):
 
     def group_cascade_events(self) -> NoReturn:
         group_counter: int = 1
-        groups: dict[int, list[Event]] = defaultdict(list)
+        groups: Dict[int, List[Event]] = defaultdict(list)
         for i in self.events:
             for j in self.events:
                 if j == i:
@@ -109,7 +116,8 @@ class CalendarEvents(object):
                             group_counter += 1
                         elif i.cascade_group == 0 and j.cascade_group != 0 or i.cascade_group != 0 \
                                 and j.cascade_group == 0:
-                            group_index: int = max(i.cascade_group, j.cascade_group)
+                            group_index: int = max(
+                                i.cascade_group, j.cascade_group)
                             i.cascade_group, j.cascade_group = group_index, group_index
                         elif i.cascade_group != j.cascade_group:
                             for k in self.events:
@@ -118,7 +126,7 @@ class CalendarEvents(object):
 
         for i in self.events:
             if i.cascade_group > 0:
-                group: list[Event] = groups[i.cascade_group]
+                group: List[Event] = groups[i.cascade_group]
                 group.append(i)
         for i in groups.values():
             total_group_cascade: int = len(i)
@@ -138,12 +146,14 @@ class CalendarEvents(object):
         """
         The events have already been split to the separate days. The event is for 1 day only.
         """
-        day_number = (event.get_start_date(self.config) - self.config.get_date_range()[0]).days
+        day_number = (event.get_start_date(self.config) -
+                      self.config.get_date_range()[0]).days
         x = self.__get_event_x(day_number)
         y = self.__get_event_y(event.start_time, event.end_time)
         event_width: int = x[1] - x[0] - style.line_day_width
         cascade_event_width: int = event_width / event.cascade_total
-        x1 = x[0] + style.line_day_width / 2 + (event.cascade_index - 1) * cascade_event_width
+        x1 = x[0] + style.line_day_width / 2 + \
+            (event.cascade_index - 1) * cascade_event_width
         x2 = x1 + cascade_event_width
         p1 = (x1, y[0])
         p2 = (x2, y[1])
@@ -151,21 +161,27 @@ class CalendarEvents(object):
                                fill=event.style.event_fill, width=style.event_border_width)
 
         if self.config.legend:
-            return  # The title and notes are printed in the legend. Skip drawing here.
+            # The title and notes are printed in the legend. Skip drawing here.
+            return
 
-        cell_inner_size: tuple[int, int] = EventDrawHelper.count_cell_inner_size(x, y)
+        cell_inner_size: tuple[int,
+                               int] = EventDrawHelper.count_cell_inner_size(x, y)
         if cell_inner_size[0] == 0 or cell_inner_size[1] == 0:
             return  # not possible to draw nothing inside the event cell
 
         # calculate text block sizes
-        title_metadata: MultilineTextMetadata = EventDrawHelper.build_title_metadata(event.title, cell_inner_size)
+        title_metadata: MultilineTextMetadata = EventDrawHelper.build_title_metadata(
+            event.title, cell_inner_size)
         notes_inner_size: tuple[int, int] = (
             cell_inner_size[0],
-            cell_inner_size[1] - (title_metadata.size[1] + style.event_title_margin if title_metadata.visible else 0)
+            cell_inner_size[1] - (title_metadata.size[1] +
+                                  style.event_title_margin if title_metadata.visible else 0)
         )
-        notes_metadata: MultilineTextMetadata = EventDrawHelper.build_notes_metadata(event.notes, notes_inner_size)
+        notes_metadata: MultilineTextMetadata = EventDrawHelper.build_notes_metadata(
+            event.notes, notes_inner_size)
 
-        total_height: int = EventDrawHelper.count_final_text_height(title_metadata, notes_metadata)
+        total_height: int = EventDrawHelper.count_final_text_height(
+            title_metadata, notes_metadata)
         y_top_offset: int = y[0] + style.event_padding
         # print title
         if title_metadata.visible:
@@ -182,7 +198,8 @@ class CalendarEvents(object):
             self.event_draw.multiline_text(title_pos, title_metadata.text, align='center',
                                            font=style.event_title_font, fill=style.event_title_color)
             # update offset for notes
-            y_top_offset = title_pos[1] + title_metadata.size[1] + style.event_title_margin
+            y_top_offset = title_pos[1] + \
+                title_metadata.size[1] + style.event_title_margin
 
         # print notes
         if notes_metadata.visible:
@@ -218,12 +235,14 @@ class CalendarEvents(object):
         height = 0
         for e in self.events:
             text = self._get_event_legend_text(e)
-            text_width, text_height = style.legend_name_font.getsize_multiline(text)
+            text_width, text_height = style.legend_name_font.getsize_multiline(
+                text)
             width = max(width, text_width)
             height += text_height
 
         width += style.legend_padding_left + style.legend_padding_right
-        height += (len(self.events) - 1) * style.legend_spacing + style.legend_padding_top + style.legend_padding_bottom
+        height += (len(self.events) - 1) * style.legend_spacing + \
+            style.legend_padding_top + style.legend_padding_bottom
 
         legend_image: Image = Image.new("RGBA", (width, height), (0, 0, 0, 0))
         legend_draw = ImageDraw.Draw(legend_image)
@@ -233,7 +252,8 @@ class CalendarEvents(object):
         for e in self.events:
             _, text_height = style.event_title_font.getsize_multiline(e.title)
             text = self._get_event_legend_text(e)
-            legend_draw.multiline_text((x, y), text, font=style.legend_name_font, fill=style.legend_name_color)
+            legend_draw.multiline_text(
+                (x, y), text, font=style.legend_name_font, fill=style.legend_name_color)
             y += text_height + style.legend_spacing
 
         del legend_draw
@@ -241,7 +261,8 @@ class CalendarEvents(object):
 
     def _get_event_legend_text(self, event: Event) -> str:
         date_text = self._get_day_title(event.get_start_date(self.config))
-        time_text = '{:%H:%M} - {:%H:%M}'.format(event.start_time, event.end_time)
+        time_text = '{:%H:%M} - {:%H:%M}'.format(
+            event.start_time, event.end_time)
         return '{}, {} - {}'.format(date_text, time_text, event.title)
 
     def _get_day_title(self, day: date) -> str:
@@ -249,7 +270,8 @@ class CalendarEvents(object):
         if not self.config.show_date:
             return weekday
         else:
-            date = day.strftime('%d.%m') + (day.strftime('.%Y') if self.config.show_year else '')
+            date = day.strftime('%d.%m') + (day.strftime('.%Y')
+                                            if self.config.show_year else '')
             return '{}, {}'.format(weekday, date)
 
     def __get_event_y(self, start: time, end: time):
@@ -261,9 +283,9 @@ class CalendarEvents(object):
             end_hour -= config_start_hour
 
         y_start = style.padding_vertical + style.hour_height + start_hour * style.hour_height + (
-                    start.minute / 60) * style.hour_height
+            start.minute / 60) * style.hour_height
         y_end = style.padding_vertical + style.hour_height + end_hour * style.hour_height + (
-                    end.minute / 60) * style.hour_height
+            end.minute / 60) * style.hour_height
         return y_start, y_end
 
     @staticmethod
@@ -276,8 +298,10 @@ class EventDrawHelper:
     @staticmethod
     def count_cell_inner_size(x: tuple[float, float], y: tuple[float, float]) -> tuple[int, int]:
         return (
-            max(0, int(x[1] - x[0] - 2 * style.line_day_width) - 2 * style.event_padding),
-            max(0, int(y[1] - y[0] - 2 * style.line_day_width) - 2 * style.event_padding)
+            max(0, int(x[1] - x[0] - 2 * style.line_day_width) -
+                2 * style.event_padding),
+            max(0, int(y[1] - y[0] - 2 * style.line_day_width) -
+                2 * style.event_padding)
         )
 
     @staticmethod
@@ -350,9 +374,11 @@ class EventDrawHelper:
         for retry_count in range(0, 12, 2):
             new_test_width: int = base_new_text_width - retry_count
             if new_test_width <= 0:
-                return MultilineTextMetadata(text, text_size)  # no place to fit the text
+                # no place to fit the text
+                return MultilineTextMetadata(text, text_size)
 
-            lines: list[str] = textwrap.wrap(text, width=new_test_width, replace_whitespace=False)
+            lines: List[str] = textwrap.wrap(
+                text, width=new_test_width, replace_whitespace=False)
             lines = StringUtils.strip_lines(lines, strip_lines)
             new_text = '\n'.join(lines)
             new_text_size = font.getsize_multiline(new_text)
